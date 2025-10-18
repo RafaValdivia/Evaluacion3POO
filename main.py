@@ -1,128 +1,146 @@
-"""Ejercicio 1"""
-
-from datetime import datetime, timedelta
-from Ejercicio1.Clases.agenda import Agenda
+"""ejercicio 1"""
 from Ejercicio1.Clases.cita import Cita
-from Ejercicio1.Clases.servicio import Coloracion, CorteCabello
-
-
-agenda = Agenda()
-cita1 = Cita(1, "Ana", "Carlos", datetime.now() + timedelta(hours=1))
-cita1.asignar_servicio(CorteCabello())
-agenda.agregar(cita1)
-cita1.confirmar("Cliente confirmó", agenda)
-
-cita2 = Cita(2, "Luis", "Carlos", datetime.now() + timedelta(hours=1, minutes=15))
-cita2.asignar_servicio(Coloracion())
-
-try:
-    agenda.agregar(cita2)
-    cita2.confirmar("Intento de confirmar", agenda)
-except Exception as e:
-    print("Error:", e)
-
-
-"""Ejercicio 2"""
+from Ejercicio1.Clases.agenda import Agenda
+from Ejercicio1.Clases.servicios import Servicios
 from datetime import datetime, timedelta
-# Importamos todas las clases de los archivos separados
-from cancha import Cancha
-from reserva import Reserva
-from tarifa import TarifaFinDeSemana, TarifaDiurna, TarifaNocturna
-from politica_cancelacion import CancelacionFlexible, CancelacionEstricta
-from reglas_y_datos import RESERVAS_ACTIVAS
 
-# --- 1. CONFIGURACIÓN DE TIEMPOS DE PRUEBA ---
-AHORA = datetime.now()
-FIN_DE_SEMANA_FUTURO = AHORA + timedelta(days=5, hours=10) # Para reservas validas
-HOY_MAS_1_HORA = AHORA + timedelta(hours=1) # Para cancelación tardía
-DURACION = timedelta(hours=2)
+def get_datetime_input(prompt):
+    while True:
+        try:
+            date_str = input(prompt)
+            return datetime.strptime(date_str, "%Y-%m-%d %H:%M")
+        except ValueError:
+            print("Formato incorrecto. Use YYYY-MM-DD HH:MM (ejemplo: 2025-10-18 10:00). Intente de nuevo.")
 
-# --- 2. INSTANCIACIÓN DE MODELOS BASE Y POLIMÓRFICOS ---
-print("--- 1. INSTANCIACIÓN DE MODELOS ---")
+def main():
+    agenda = Agenda()
+    servicios = Servicios()
 
-# Instanciación de Cancha
-cancha_principal = Cancha(id_cancha=1, nombre="Sintética Principal")
-cancha_principal.bloquear_mantencion(AHORA + timedelta(days=2, hours=10), AHORA + timedelta(days=2, hours=12))
-print(f"✔️ Cancha: {cancha_principal.nombre} instanciada y con bloqueo de Mantención.")
+    while True:
+        print("\nOpciones:")
+        print("1. Agregar cita")
+        print("2. Salir")
+        choice = input("Seleccione una opción (1-2): ")
 
-# Instanciación de Tarifa (Polimórfica)
-tarifa_fds = TarifaFinDeSemana()
-tarifa_diurna = TarifaDiurna()
-print(f"✔️ Tarifa Fin de Semana instanciada (Valor Hora: {tarifa_fds.VALOR_HORA}).")
+        if choice == "2":
+            break
 
-# Instanciación de Política de Cancelación (Polimórfica)
-politica_flexible = CancelacionFlexible()
-politica_estricta = CancelacionEstricta()
-print(f"✔️ Políticas de Cancelación (Flexible/Estricta) instanciadas.")
+        if choice == "1":
+            id_cita = input("Ingrese ID de la cita: ")
+            cliente = input("Ingrese nombre del cliente: ")
+            profesional = input("Ingrese nombre del profesional: ")
+            inicio = get_datetime_input("Ingrese fecha y hora de inicio (YYYY-MM-DD HH:MM) a partir del 2025-10-18 para adelante: ")
 
+            cita = Cita(id_cita, cliente, profesional, inicio)
+            servicio_type = input(f"Seleccione servicio ({', '.join(servicios.get_services())}): ")
+            if cita.asignar_servicio(servicios, servicio_type):
+                motivo = input("Ingrese motivo de confirmación: ")
+                if agenda.agregar(cita) and cita.confirmar(motivo, agenda):
+                    print(f"Cita {id_cita} agregada y confirmada. Fin: {cita.fin()}, Servicio: {cita.get_servicio_type()}")
+                else:
+                    print("No se pudo agregar la cita (posible solape).")
+            else:
+                print("No se pudo asignar el servicio.")
 
-# --- 3. ESCENARIO 1: COTIZAR Y CONFIRMAR RESERVA VÁLIDA ---
-print("\n--- 2. ESCENARIO 1: RESERVA VÁLIDA (COTIZAR -> CONFIRMAR) ---")
-reserva_a = Reserva(
-    id_reserva=100, 
-    cancha=cancha_principal, 
-    cliente="Juan Pérez", 
-    inicio=FIN_DE_SEMANA_FUTURO, 
-    fin=FIN_DE_SEMANA_FUTURO + DURACION
-)
-print(f"   Reserva A creada ({reserva_a.estado}).")
-reserva_a.cotizar(tarifa_fds)
-print(f"   Reserva A cotizada ({reserva_a.estado}). Importe: {reserva_a.importe}")
-reserva_a.confirmar("Pago electrónico exitoso.")
-print(f"   Reserva A CONFIRMADA ({reserva_a.estado}). Activas: {len(RESERVAS_ACTIVAS)}")
+if __name__ == "__main__":
+    main()
+    
+"""ejercicio 2"""
+from Ejercicio2.clases.colaborador import Colaborador
+from Ejercicio2.clases.franja import Franja
+from Ejercicio2.clases.turno_asignado import TurnoAsignado
+from Ejercicio2.clases.plan_semanal import PlanSemanal
+from Ejercicio2.clases.politica_turno import TurnoFijo
+from datetime import datetime, timedelta
 
+def main():
+    id_colaborador = input("Ingrese el ID del colaborador: ")
+    nombre = input("Ingrese el nombre del colaborador: ")
+    horas_max = int(input("Ingrese las horas máximas por semana: "))
+    preferencia = input("Ingrese la preferencia (manana/tarde): ")
+    no_disponible = []  # Simplified for input, can be expanded
+    colaborador = Colaborador(id_colaborador, nombre, horas_max, preferencia, no_disponible)
 
-# --- 4. ESCENARIO 2: INTENTO DE SOLAPE (DEBE FALLAR) ---
-print("\n--- 3. ESCENARIO 2: INTENTO DE SOLAPE (REGLA SIN SOLAPES) ---")
-reserva_b_solape = Reserva(
-    id_reserva=101, 
-    cancha=cancha_principal, 
-    cliente="María López", 
-    inicio=FIN_DE_SEMANA_FUTURO + timedelta(hours=1), # Se solapa con Reserva A
-    fin=FIN_DE_SEMANA_FUTURO + timedelta(hours=3)
-)
-reserva_b_solape.cotizar(tarifa_fds)
-try:
-    reserva_b_solape.confirmar("Intento de confirmación con solape")
-except ValueError as e:
-    print(f"   ❌ ÉXITO: Solape rechazado. Mensaje: {e}")
-finally:
-    # Como falló, quitamos la reserva del historial de activos si se agregó por error.
-    if reserva_b_solape in RESERVAS_ACTIVAS:
-        RESERVAS_ACTIVAS.remove(reserva_b_solape)
+    dia = input("Ingrese el día (ej. lunes): ")
+    hora_inicio = input("Ingrese la hora de inicio (formato HH:MM, ej. 09:00): ")
+    hora_fin = input("Ingrese la hora de fin (formato HH:MM, ej. 10:00): ")
+    inicio = datetime.strptime(f"{datetime.now().strftime('%Y-%m-%d')} {hora_inicio}", "%Y-%m-%d %H:%M")
+    fin = datetime.strptime(f"{datetime.now().strftime('%Y-%m-%d')} {hora_fin}", "%Y-%m-%d %H:%M")
+    franja = Franja(dia, inicio, fin)
 
+    turno = TurnoAsignado(franja, colaborador)
+    plan = PlanSemanal(f"{datetime.now().strftime('%Y-%m-%d')} to {datetime.now().strftime('%Y-%m-%d')}")
+    plan._franjas.append(franja)
+    plan._turnos_asignados.append(turno)
+    politica = TurnoFijo()
+    print(f"Cobertura: {plan.cobertura_pct()}%")
 
-# --- 5. ESCENARIO 3: CANCELACIÓN CON PENALIZACIÓN (Trazabilidad) ---
-print("\n--- 4. ESCENARIO 3: CANCELACIÓN TARDÍA (POLÍTICA FLEXIBLE) ---")
-reserva_c_tardia = Reserva(
-    id_reserva=102, 
-    cancha=cancha_principal, 
-    cliente="Carlos Ruiz", 
-    inicio=HOY_MAS_1_HORA, # La hora de inicio es pronto (tardía)
-    fin=HOY_MAS_1_HORA + DURACION
-)
-reserva_c_tardia.cotizar(tarifa_diurna)
-reserva_c_tardia.confirmar("Confirmada para hoy.")
+if __name__ == "__main__":
+    main()
+    
+"""Ejercicio 3"""
+from Ejercicio3.Clases.cancha import Cancha
+from Ejercicio3.Clases.calendarioCancha import CalendarioCancha
+from Ejercicio3.Clases.reserva import Reserva
+from Ejercicio3.Clases.tarifa import TarifaDiurna, TarifaNocturna, TarifaFinDeSemana
+from Ejercicio3.Clases.politicacancelacion import CancelacionFlexible, CancelacionEstricta
+from datetime import datetime, timedelta
 
-# Cancelamos con pocas horas de anticipación (< 24h)
-reserva_c_tardia.cancelar("Motivo personal urgente", politica_flexible)
+def main():
+    id_cancha = input("Ingrese el ID de la cancha: ")
+    nombre = input("Ingrese el nombre de la cancha: ")
+    cancha = Cancha(id_cancha, nombre)
+    calendario = CalendarioCancha()
 
-penalidad = reserva_c_tardia.historial_eventos[-1]['monto']
-print(f"   Reserva C CANCELADA. Penalización aplicada (20%): {penalidad}")
-print(f"   Trazabilidad: {reserva_c_tardia.historial_eventos[-1]['detalle']}")
+    id_reserva = input("Ingrese el ID de la reserva: ")
+    cliente = input("Ingrese el nombre del cliente: ")
+    hora_inicio = input("Ingrese la hora de inicio (formato HH:MM, ej. 14:00): ")
+    hora_fin = input("Ingrese la hora de fin (formato HH:MM, ej. 15:00): ")
+    inicio = datetime.strptime(f"{datetime.now().strftime('%Y-%m-%d')} {hora_inicio}", "%Y-%m-%d %H:%M")
+    fin = datetime.strptime(f"{datetime.now().strftime('%Y-%m-%d')} {hora_fin}", "%Y-%m-%d %H:%M")
+    reserva = Reserva(id_reserva, cancha, cliente, inicio, fin)
 
+    tarifa_type = input("Ingrese el tipo de tarifa (diurna/nocturna/finde): ").lower()
+    tarifa = TarifaDiurna() if tarifa_type == "diurna" else TarifaNocturna() if tarifa_type == "nocturna" else TarifaFinDeSemana()
+    if reserva.cotizar(tarifa):
+        print(f"Importe cotizado: {reserva._importe}")
+    else:
+        print("No se pudo cotizar la reserva.")
 
-# --- 6. ESCENARIO 4: INTENTO DE RESERVA EN MANTENCIÓN (DEBE FALLAR) ---
-print("\n--- 5. ESCENARIO 4: RESERVA EN MANTENCIÓN (DEBE FALLAR) ---")
-reserva_d_mantencion = Reserva(
-    id_reserva=103, 
-    cancha=cancha_principal, 
-    cliente="Andrea Soto", 
-    inicio=AHORA + timedelta(days=2, hours=11), # Intervalo de 11:00 a 13:00
-    fin=AHORA + timedelta(days=2, hours=13)
-)
-reserva_d_mantencion.cotizar(tarifa_diurna)
-try:
-    reserva_d_mantencion.confirmar("Intento en horario de mantención")
-except ValueError as e:
-    print(f"   ❌ ÉXITO: Mantención rechazada. Mensaje: {e}")
+if __name__ == "__main__":
+    main()
+
+"""Ejercicio 4"""
+from Ejercicio4.clases.suscriptor import Suscriptor
+from Ejercicio4.clases.retiro import Retiro
+from Ejercicio4.clases.material import Plastico, Vidrio, PapelCarton
+from Ejercicio4.clases.bonussemanal import BonusSemanal
+from Ejercicio4.clases.aviso import Aviso
+from datetime import datetime
+
+def main():
+    id_suscriptor = input("Ingrese el ID del suscriptor: ")
+    direccion = input("Ingrese la dirección del suscriptor: ")
+    suscriptor = Suscriptor(id_suscriptor, direccion)
+
+    id_retiro = input("Ingrese el ID del retiro: ")
+    material_type = input("Ingrese el tipo de material (plastico/vidrio/papel): ").lower()
+    material = Plastico() if material_type == "plastico" else Vidrio() if material_type == "vidrio" else PapelCarton()
+    kg = float(input("Ingrese los kilogramos: "))
+    fecha = datetime.now()
+    retiro = Retiro(id_retiro, suscriptor, fecha, material, kg)
+    
+    retiro.validar()  # Simular validación del retiro
+    print(f"Puntos calculados: {retiro.puntos_calculados()}")
+
+    bonus = BonusSemanal(suscriptor)
+    puntos_bonus = bonus.calcular_bonus()
+    if puntos_bonus > 0:
+        print(f"Bonus semanal aplicado: {puntos_bonus} puntos")
+
+    aviso = Aviso(retiro, f"Retiro {id_retiro} validado con {kg} kg de {material_type}")
+    print(f"Aviso emitido: {aviso.get_mensaje()}")
+    print(f"Estado después de leer: {aviso.marcar_leido()}")
+
+if __name__ == "__main__":
+    main()

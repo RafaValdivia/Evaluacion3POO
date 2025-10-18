@@ -1,52 +1,19 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, time
+from datetime import datetime, timedelta
 
 class Tarifa(ABC):
-    
     @abstractmethod
-    def calcular_importe(self, inicio: datetime, fin: datetime) -> dict:
+    def calcular_importe(self, inicio, fin):
         pass
 
-class TarifaFinDeSemana(Tarifa):
-    VALOR_HORA = 35.0
-
-    def calcular_importe(self, inicio: datetime, fin: datetime) -> dict:
-        if inicio >= fin:
-             raise ValueError("Intervalo inválido.")
-             
-        duracion_horas = (fin - inicio).total_seconds() / 3600
-        total = duracion_horas * self.VALOR_HORA
-        return {
-            "total": round(total, 2), 
-            "desglose": [{"tipo": "FinDeSemana", "subtotal": round(total, 2)}] 
-        }
-
 class TarifaDiurna(Tarifa):
-    VALOR_HORA = 20.0
-    HORA_INICIO = time(8, 0)
-    HORA_FIN = time(19, 59)
-
-    def calcular_importe(self, inicio: datetime, fin: datetime) -> dict:
-        if inicio >= fin:
-             raise ValueError("Intervalo inválido.")
-             
-        duracion_horas = (fin - inicio).total_seconds() / 3600
-        total = duracion_horas * self.VALOR_HORA
-        return {
-            "total": round(total, 2), 
-            "desglose": [{"tipo": "Diurna", "subtotal": round(total, 2)}]
-        }
+    def calcular_importe(self, inicio, fin):
+        return 10, [{"desde": inicio, "hasta": fin, "tipo_tarifa": "Diurna", "minutos": (fin - inicio).total_seconds() / 60, "valor_hora": 10, "subtotal": 10}]
 
 class TarifaNocturna(Tarifa):
-    VALOR_HORA = 15.0 
-    
-    def calcular_importe(self, inicio: datetime, fin: datetime) -> dict:
-        if inicio >= fin:
-             raise ValueError("Intervalo inválido.")
-             
-        duracion_horas = (fin - inicio).total_seconds() / 3600
-        total = duracion_horas * self.VALOR_HORA
-        return {
-            "total": round(total, 2), 
-            "desglose": [{"tipo": "Nocturna", "subtotal": round(total, 2)}]
-        }
+    def calcular_importe(self, inicio, fin):
+        return 15, [{"desde": inicio, "hasta": fin, "tipo_tarifa": "Nocturna", "minutos": (fin - inicio).total_seconds() / 60, "valor_hora": 15, "subtotal": 15}]
+
+class TarifaFinDeSemana(Tarifa):
+    def calcular_importe(self, inicio, fin):
+        return 20, [{"desde": inicio, "hasta": fin, "tipo_tarifa": "FinDeSemana", "minutos": (fin - inicio).total_seconds() / 60, "valor_hora": 20, "subtotal": 20}]

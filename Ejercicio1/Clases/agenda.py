@@ -1,18 +1,17 @@
-# ---- Agenda ----
+from datetime import datetime, timedelta
+
 class Agenda:
     def __init__(self):
         self._citas = []
 
     def agregar(self, cita):
-        if any(c._id == cita._id for c in self._citas):
-            raise Exception("ID de cita duplicado.")
-        if self.existe_solape(cita._profesional, cita._inicio, cita.fin):
-            raise Exception("Cita solapada.")
-        self._citas.append(cita)
+        if not any(c._id_cita == cita._id_cita for c in self._citas) and not self.existe_solape(cita._profesional, cita._inicio, cita.fin()):
+            self._citas.append(cita)
+            return True
+        return False
 
     def existe_solape(self, profesional, inicio, fin):
-        for c in self._citas:
-            if c._profesional == profesional and c._estado != "cancelada":
-                if inicio < c.fin and c._inicio < fin:
-                    return True
+        for cita in self._citas:
+            if cita._profesional == profesional and cita._estado != "cancelada" and cita._inicio < fin and inicio < cita.fin():
+                return True
         return False
